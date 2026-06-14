@@ -1,0 +1,12 @@
+{
+  "name": "oaktreeuni-job-pipeline",
+  "version": "1.0.0",
+  "description": "Scheduled Adzuna -> jobs.json pull with optional Notion mirror, for the OakTreeUni job finder widget.",
+  "private": true,
+  "scripts": {
+    "start": "node fetch-jobs.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
