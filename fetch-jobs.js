@@ -211,10 +211,12 @@ function companySizeOf(company){
 function entryFriendlyOf(job, sen){
   if (sen==="Senior") return false;
   const d = lc(job.description||"");
-  // Require an EXPLICIT entry-level signal, not just absence of requirements.
-  const training = /(will train|we.{0,6}train|willing to train|training (will be )?provided|no experience (required|necessary)|entry.level|career (change|switch|transition|changer)|bootcamp|new grad|recent grad|no degree required)/.test(d);
-  const lowExpStated = (job.yoe!==null && job.yoe<=2);
-  return training || lowExpStated;
+  const t = lc(job.title||"");
+  // Real entry signals: junior-ish title, training language, or low stated experience.
+  const juniorTitle = /\b(junior|jr\.?|associate|entry.level|coordinator|assistant|trainee|graduate)\b/.test(t);
+  const training = /(will train|we.{0,6}train|willing to train|training (will be )?provided|no experience (required|necessary)|entry.level|career (change|switch|transition|changer)|bootcamp|new grad|recent grad|no degree required|0-2 years|1-2 years|1-3 years)/.test(d);
+  const lowExpStated = (job.yoe!==null && job.yoe<=3);
+  return juniorTitle || training || lowExpStated;
 }
 
 function enrich(job){
