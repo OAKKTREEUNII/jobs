@@ -32,10 +32,11 @@ const QUERIES = ["scrum master","agile coach","release train engineer","it proje
 
 // Curated target companies for direct ATS pulls. EDIT THESE.
 // Find the slug in a company's careers URL, e.g. boards.greenhouse.io/<slug>
+// Verified slugs — each confirmed to currently host IT PM / Scrum / Program / Agile roles.
 const ATS = {
-  greenhouse: ["stripe","databricks","airtable","gitlab"],
-  lever:      ["plaid","brex"],
-  ashby:      ["ramp","linear"]
+  greenhouse: ["stripe","coinbase","brex","toast","samsara","anthropic","kaseya","coupang","oura","parloa","databricks","airtable","figma","doordashusa","andurilindustries","discord","scopely","fanaticscollectibles","pokemoncareers","celonis","boxinc","esri","cognite","capitalrx","slideinsurance","bottomlinetechnologies","vestmark","capco","triparc","orium","knowledgecity","viralnation","curaleaf","cannondesign","wpp"],
+  lever:      ["outreach","clearcapital","cologix","afero","kraken123","contentsquare","applydigital","cyara","compassx","ciandt"],
+  ashby:      ["openai","ramp","notion","ashby","socure","instructure","serverobotics","ambiencehealthcare","character","lambda","lilt-corporate","fluidstack","keyrock","webai","osmo","xbowcareers"]
 };
 
 const RESULTS_PER_PAGE = 50;
