@@ -209,10 +209,12 @@ function companySizeOf(company){
 
 /* --- Career-switcher friendly --- */
 function entryFriendlyOf(job, sen){
+  if (sen==="Senior") return false;
   const d = lc(job.description||"");
-  const training = /(will train|we.{0,6}train|no experience|entry.level|career (change|switch|transition)|bootcamp|eager to learn|mentorship|new grad|recent grad|degree or equivalent|equivalent experience|no degree required)/.test(d);
-  const lowExp = (job.yoe===null || job.yoe<=2);
-  return sen!=="Senior" && lowExp && (job.certs.length===0 || training);
+  // Require an EXPLICIT entry-level signal, not just absence of requirements.
+  const training = /(will train|we.{0,6}train|willing to train|training (will be )?provided|no experience (required|necessary)|entry.level|career (change|switch|transition|changer)|bootcamp|new grad|recent grad|no degree required)/.test(d);
+  const lowExpStated = (job.yoe!==null && job.yoe<=2);
+  return training || lowExpStated;
 }
 
 function enrich(job){
