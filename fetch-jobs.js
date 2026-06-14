@@ -159,6 +159,62 @@ function tldr(desc, job){
   else if (job.sponsorship==="friendly") bullets.push("Open to visa sponsorship.");
   return bullets.slice(0,3);
 }
+/* --- Location parsing (city + state/province) --- */
+const US_STATES = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia"};
+const CA_PROV = {ON:"Ontario",QC:"Quebec",BC:"British Columbia",AB:"Alberta",MB:"Manitoba",SK:"Saskatchewan",NS:"Nova Scotia",NB:"New Brunswick",NL:"Newfoundland and Labrador",PE:"Prince Edward Island",YT:"Yukon",NT:"Northwest Territories",NU:"Nunavut"};
+const ALL_REGIONS = Object.assign({}, US_STATES, CA_PROV);
+const NAME_TO_ABBR = {}; for (const k in ALL_REGIONS) NAME_TO_ABBR[ALL_REGIONS[k].toLowerCase()] = k;
+function parseLocation(loc){
+  let s = (loc||"").replace(/\(.*?\)/g," ").replace(/\bremote\b/ig," ").replace(/[\-—–|\/]/g," ").replace(/\s+/g," ").trim();
+  if(!s) return {city:"", state:""};
+  const parts = s.split(",").map(p=>p.trim()).filter(Boolean);
+  let city="", state="";
+  for(let i=0;i<parts.length;i++){
+    const up = parts[i].toUpperCase().replace(/\./g,"");
+    if(ALL_REGIONS[up]){ state=ALL_REGIONS[up]; if(i>0) city=parts[i-1]; break; }
+    const nm = NAME_TO_ABBR[parts[i].toLowerCase()];
+    if(nm){ state=ALL_REGIONS[nm]; if(i>0) city=parts[i-1]; break; }
+  }
+  if(!city && parts[0] && !/united states|u\.?s\.?a?|canada|anywhere/i.test(parts[0])) city=parts[0];
+  if(/united states|u\.?s\.?a?|canada|anywhere|remote/i.test(city)) city="";
+  return {city:city, state:state};
+}
+
+/* --- Industry / domain --- */
+function industryOf(job){
+  const t = lc(job.company+" "+job.title+" "+(job.description||""));
+  if(/\b(bank|fintech|financial|payments?|trading|lending|credit union|capital|invest|brokerage|wealth|mortgage)\b/.test(t)) return "Finance";
+  if(/\b(insurance|insurer|underwrit|actuar)\b/.test(t)) return "Insurance";
+  if(/\b(health|hospital|clinical|ehr|medical|pharma|biotech|patient|medicaid|medicare|life sciences)\b/.test(t)) return "Healthcare";
+  if(/\b(government|public sector|federal|municipal|\bgov\b|defense|defence|state of|city of|county of)\b/.test(t)) return "Government";
+  if(/\b(retail|e-?commerce|commerce|shopping|consumer goods|merchandis)\b/.test(t)) return "Retail";
+  if(/\b(university|edtech|education|school|academ|e-?learning)\b/.test(t)) return "Education";
+  if(/\b(telecom|wireless|broadband|network operator)\b/.test(t)) return "Telecom";
+  return "Technology";
+}
+
+/* --- Company size (best-effort dictionary; others = Unknown) --- */
+const COMPANY_SIZE = {
+  "stripe":"Large","databricks":"Large","gitlab":"Large","google":"Large","alphabet":"Large","amazon":"Large","aws":"Large","microsoft":"Large","apple":"Large","meta":"Large","facebook":"Large","netflix":"Large","ibm":"Large","oracle":"Large","salesforce":"Large","sap":"Large","adobe":"Large","intuit":"Large","paypal":"Large","cisco":"Large","dell":"Large","intel":"Large","nvidia":"Large","accenture":"Large","deloitte":"Large","pwc":"Large","kpmg":"Large","ey":"Large","capgemini":"Large","cognizant":"Large","infosys":"Large","tcs":"Large","tata consultancy services":"Large","wipro":"Large","hcl":"Large","atos":"Large","dxc":"Large","kyndryl":"Large","cgi":"Large","jpmorgan":"Large","jpmorgan chase":"Large","bank of america":"Large","wells fargo":"Large","citi":"Large","citigroup":"Large","goldman sachs":"Large","morgan stanley":"Large","american express":"Large","visa":"Large","mastercard":"Large","rbc":"Large","royal bank of canada":"Large","td bank":"Large","scotiabank":"Large","bmo":"Large","cibc":"Large","manulife":"Large","sun life":"Large","shopify":"Large","uber":"Large","lyft":"Large","airbnb":"Large","atlassian":"Large","servicenow":"Large","workday":"Large","vmware":"Large","telus":"Large","rogers":"Large","bell":"Large","walmart":"Large","target":"Large","costco":"Large","fedex":"Large","ups":"Large","unitedhealth":"Large","cvs":"Large","figma":"Large",
+  "airtable":"Midsize","brex":"Midsize","ramp":"Midsize","notion":"Midsize","plaid":"Midsize","retool":"Midsize","mixpanel":"Midsize","asana":"Midsize","gusto":"Midsize","calendly":"Midsize","webflow":"Midsize","miro":"Midsize",
+  "linear":"Startup","vercel":"Startup","supabase":"Startup","posthog":"Startup","render":"Startup","replit":"Startup","hex":"Startup","dbt labs":"Startup","fly.io":"Startup"
+};
+function companySizeOf(company){
+  const c = lc(company).replace(/\b(inc|llc|ltd|corp|corporation|co|company|group|technologies|technology|solutions)\b/g," ").replace(/[.,]/g," ").replace(/\s+/g," ").trim();
+  if(!c || c==="company not disclosed") return "Unknown";
+  if(COMPANY_SIZE[c]) return COMPANY_SIZE[c];
+  for(const k in COMPANY_SIZE){ if(k.length>=4 && (c===k || c.indexOf(k+" ")===0 || c.indexOf(" "+k)!==-1)) return COMPANY_SIZE[k]; }
+  return "Unknown";
+}
+
+/* --- Career-switcher friendly --- */
+function entryFriendlyOf(job, sen){
+  const d = lc(job.description||"");
+  const training = /(will train|we.{0,6}train|no experience|entry.level|career (change|switch|transition)|bootcamp|eager to learn|mentorship|new grad|recent grad|degree or equivalent|equivalent experience|no degree required)/.test(d);
+  const lowExp = (job.yoe===null || job.yoe<=2);
+  return sen!=="Senior" && lowExp && (job.certs.length===0 || training);
+}
+
 function enrich(job){
   const intent = scoreJob(job);
   const sen = seniority(job.title, job.description);
@@ -174,6 +230,13 @@ function enrich(job){
   job.remote = job.workMode === "Remote";
   job.whyFit = whyFit(job, sen);
   job.tldr = tldr(job.description, job);
+  const loc = parseLocation(job.location);
+  job.city = loc.city;
+  job.state = loc.state;
+  job.industry = industryOf(job);
+  job.companySize = companySizeOf(job.company);
+  job.entryFriendly = entryFriendlyOf(job, sen);
+  job.direct = ["Greenhouse","Lever","Ashby"].indexOf(job.source) !== -1;
   return job;
 }
 
